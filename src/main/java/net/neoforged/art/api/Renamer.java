@@ -151,6 +151,8 @@ public interface Renamer extends Closeable {
          */
         Builder setCollectAbstractParams(boolean collectAbstractParams);
 
+        Builder ignoreJarPathPrefix(String... prefixes);
+
         /**
          * Builds the {@link Renamer} instance based on this configured builder.
          * The built Renamer is guaranteed to be reusable for multiple runs.

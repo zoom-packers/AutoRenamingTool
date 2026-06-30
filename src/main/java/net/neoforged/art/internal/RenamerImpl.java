@@ -50,11 +50,12 @@ class RenamerImpl implements Renamer {
     private final int threads;
     private final Consumer<String> logger;
     private final Consumer<String> debug;
+    private final List<String> ignoreJarPathPrefix;
     private boolean setup = false;
     private ClassProvider libraryClasses;
 
     RenamerImpl(List<Path> libraries, List<Transformer> transformers, SortedClassProvider sortedClassProvider, List<ClassProvider> classProviders,
-                int threads, Consumer<String> logger, Consumer<String> debug) {
+                int threads, Consumer<String> logger, Consumer<String> debug, List<String> ignoreJarPathPrefix) {
         this.libraries = libraries;
         this.transformers = transformers;
         this.sortedClassProvider = sortedClassProvider;
@@ -62,6 +63,7 @@ class RenamerImpl implements Renamer {
         this.threads = threads;
         this.logger = logger;
         this.debug = debug;
+        this.ignoreJarPathPrefix = ignoreJarPathPrefix;
     }
 
     private void setup() {
@@ -100,6 +102,7 @@ class RenamerImpl implements Renamer {
         PROGRESS.setStep("Reading input jar");
         // Read everything from the input jar!
         List<Entry> oldEntries = new ArrayList<>();
+        List<Entry> excludedEntries = new ArrayList<>();
         try (ZipFile in = new ZipFile(input)) {
             int amount = 0;
             for (Enumeration<? extends ZipEntry> entries = in.entries(); entries.hasMoreElements(); ) {
@@ -110,6 +113,11 @@ class RenamerImpl implements Renamer {
                 byte[] data;
                 try (InputStream entryInput = in.getInputStream(e)) {
                     data = readAllBytes(entryInput, e.getSize());
+                }
+
+                if (this.ignoreJarPathPrefix.stream().anyMatch(name::startsWith)) {
+                    excludedEntries.add(Entry.ofFile(name, e.getTime(), data));
+                    continue;
                 }
 
                 oldEntries.add(Entry.ofFile(name, e.getTime(), data));
@@ -123,6 +131,7 @@ class RenamerImpl implements Renamer {
         }
 
         List<Entry> newEntries = run(oldEntries);
+        newEntries.addAll(excludedEntries);
 
         Set<String> seen = new HashSet<>();
         String dupes = newEntries.stream().map(Entry::getName)

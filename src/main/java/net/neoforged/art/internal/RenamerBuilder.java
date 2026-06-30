@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -30,6 +31,7 @@ public class RenamerBuilder implements Builder {
     private Consumer<String> debug = s -> {
     };
     private boolean collectAbstractParams = true;
+    private final List<String> ignoreJarPathPrefix = new ArrayList<>();
 
     @Override
     public Builder lib(File value) {
@@ -40,6 +42,12 @@ public class RenamerBuilder implements Builder {
     @Override
     public Builder lib(Path value) {
         this.libraries.add(value);
+        return this;
+    }
+
+    @Override
+    public Builder ignoreJarPathPrefix(String... prefixes) {
+        this.ignoreJarPathPrefix.addAll(Arrays.asList(prefixes));
         return this;
     }
 
@@ -130,6 +138,6 @@ public class RenamerBuilder implements Builder {
         for (Transformer.Factory factory : transformerFactories) {
             transformers.add(requireNonNull(factory.create(ctx), "output of " + factory));
         }
-        return new RenamerImpl(libraries, transformers, sortedClassProvider, classProviders, threads, logger, debug);
+        return new RenamerImpl(libraries, transformers, sortedClassProvider, classProviders, threads, logger, debug, ignoreJarPathPrefix);
     }
 }
