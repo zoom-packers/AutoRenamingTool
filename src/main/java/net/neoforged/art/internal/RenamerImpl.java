@@ -10,25 +10,12 @@ import net.neoforged.art.api.Renamer;
 import net.neoforged.art.api.Transformer;
 import net.neoforged.art.api.Transformer.ClassEntry;
 import net.neoforged.art.api.Transformer.Entry;
-import net.neoforged.cliutils.JarUtils;
-import net.neoforged.cliutils.progress.ProgressReporter;
 import org.objectweb.asm.Opcodes;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +27,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 class RenamerImpl implements Renamer {
-    private static final ProgressReporter PROGRESS = ProgressReporter.getDefault();
     static final int MAX_ASM_VERSION = Opcodes.ASM9;
     private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
     private final List<Path> libraries;
@@ -84,14 +70,6 @@ class RenamerImpl implements Renamer {
         if (!this.setup)
             this.setup();
 
-        if (Boolean.getBoolean(ProgressReporter.ENABLED_PROPERTY)) {
-            try {
-                PROGRESS.setMaxProgress(JarUtils.getFileCountInZip(input));
-            } catch (IOException e) {
-                logger.accept("Failed to read zip file count: " + e);
-            }
-        }
-
         input = Objects.requireNonNull(input).getAbsoluteFile();
         output = Objects.requireNonNull(output).getAbsoluteFile();
 
@@ -99,7 +77,6 @@ class RenamerImpl implements Renamer {
             throw new IllegalArgumentException("Input file not found: " + input.getAbsolutePath());
 
         logger.accept("Reading Input: " + input.getAbsolutePath());
-        PROGRESS.setStep("Reading input jar");
         // Read everything from the input jar!
         List<Entry> oldEntries = new ArrayList<>();
         List<Entry> excludedEntries = new ArrayList<>();
@@ -121,10 +98,6 @@ class RenamerImpl implements Renamer {
                 }
 
                 oldEntries.add(Entry.ofFile(name, e.getTime(), data));
-
-                if ((++amount) % 10 == 0) {
-                    PROGRESS.setProgress(amount);
-                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not parse input: " + input.getAbsolutePath(), e);
@@ -142,9 +115,6 @@ class RenamerImpl implements Renamer {
             throw new IllegalStateException("Duplicate entries detected: " + dupes);
 
         seen.clear();
-
-        PROGRESS.setMaxProgress(newEntries.size());
-        PROGRESS.setStep("Writing output");
 
         if (!output.getParentFile().exists())
             output.getParentFile().mkdirs();
@@ -166,13 +136,7 @@ class RenamerImpl implements Renamer {
                 zos.putNextEntry(entry);
                 zos.write(e.getData());
                 zos.closeEntry();
-
-                if ((++amount) % 10 == 0) {
-                    PROGRESS.setProgress(amount);
-                }
             }
-
-            PROGRESS.setProgress(amount);
         } catch (IOException e) {
             throw new RuntimeException("Could not write output to file: " + output.getAbsolutePath(), e);
         }
@@ -211,10 +175,6 @@ class RenamerImpl implements Renamer {
         this.sortedClassProvider.classProviders = classProviders;
 
         AsyncHelper async = new AsyncHelper(executorService);
-
-        PROGRESS.setProgress(0);
-        PROGRESS.setIndeterminate(true);
-        PROGRESS.setStep("Processing entries");
 
         List<ClassEntry> ourClasses = oldEntries.stream()
                 .filter(e -> e instanceof ClassEntry && !e.getName().startsWith("META-INF/"))
