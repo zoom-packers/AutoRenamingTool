@@ -1,5 +1,3 @@
-import net.neoforged.gradleutils.PomUtilsExtension.License
-
 plugins {
     id 'eclipse'
     id 'signing'
@@ -10,7 +8,7 @@ plugins {
     id 'net.neoforged.gradleutils' version '5.0.4'
 }
 
-group 'net.neoforged'
+group 'org.sinytra'
 
 gradleutils {
     version {
@@ -30,15 +28,15 @@ compileJava.options.encoding = 'UTF-8'
 
 ext {
     TITLE = 'Auto Renaming Tool'
-    MANIFEST = manifest{
+    MANIFEST = manifest {
         attributes('Main-Class': 'net.neoforged.art.Main')
         attributes([
-            'Specification-Title':      'AutoRenamingTool',
-            'Specification-Vendor':     'Neo Forged',
-            'Specification-Version':    gradleutils.gitInfo.tag,
-            'Implementation-Title':     'ART',
-            'Implementation-Version':   project.version,
-            'Implementation-Vendor':    'NeoForged'
+                'Specification-Title'   : 'AutoRenamingTool',
+                'Specification-Vendor'  : 'Neo Forged',
+                'Specification-Version' : gradleutils.gitInfo.tag,
+                'Implementation-Title'  : 'ART',
+                'Implementation-Version': project.version,
+                'Implementation-Vendor' : 'NeoForged'
         ] as LinkedHashMap, 'net/neoforged/art/')
     }
     INITIAL_CHANGELOG_TAG = '1.0'
@@ -77,10 +75,10 @@ dependencies {
 
 
 test {
-  useJUnitPlatform()
-  testLogging {
-    events 'passed', 'skipped', 'failed'
-  }
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
 }
 
 java.withSourcesJar()
@@ -111,14 +109,22 @@ publishing {
             pom {
                 name = TITLE
                 description = 'A tool that renames java bytecode elements.'
-                pomUtils.neoForgedDeveloper(it)
-                pomUtils.license(it, License.LGPL_v2)
-                pomUtils.githubRepo(it, 'AutoRenamingTool')
             }
         }
     }
     repositories {
-        maven gradleutils.publishingMaven
+        def env = System.getenv()
+        if (env["MAVEN_URL"] != null) {
+            repositories.maven {
+                url = env["MAVEN_URL"]
+                if (env["MAVEN_USERNAME"] != null) {
+                    credentials {
+                        username = env["MAVEN_USERNAME"]
+                        password = env["MAVEN_PASSWORD"]
+                    }
+                }
+            }
+        }
     }
 }
 
