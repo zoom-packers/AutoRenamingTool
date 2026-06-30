@@ -20,13 +20,7 @@ import java.lang.reflect.Method;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,21 +60,26 @@ class ClassProviderImpl implements ClassProvider {
         return this.classCache != null ? this.classCache.computeIfAbsent(name, this::computeClassInfo) : computeClassInfo(name);
     }
 
-    private Optional<? extends IClassInfo> computeClassInfo(String name) {
-        Optional<? extends IClassInfo> knownClassInfo = this.classInfos.get(name);
-        if (knownClassInfo != null)
-            return knownClassInfo;
-
-        Path source = this.sources.get(name);
+    @Override
+    public Optional<byte[]> getClassBytes(String cls) {
+        Path source = this.sources.get(cls);
 
         if (source == null)
             return Optional.empty();
 
         try {
-            return Optional.of(new ClassInfo(Files.readAllBytes(source)));
+            byte[] data = Util.toByteArray(Files.newInputStream(source));
+            return Optional.of(data);
         } catch (IOException e) {
             throw new RuntimeException("Could not get data to compute class info in file: " + source.toAbsolutePath(), e);
         }
+    }
+
+    private Optional<? extends IClassInfo> computeClassInfo(String name) {
+        if (this.classInfos.containsKey(name))
+            return this.classInfos.get(name);
+
+        return getClassBytes(name).map(ClassInfo::new);
     }
 
     @Override
@@ -153,11 +152,13 @@ class ClassProviderImpl implements ClassProvider {
         public String getName() {
             return name;
         }
+
         @Nullable
         @Override
         public String getSuper() {
             return superName;
         }
+
         @Override
         public int getAccess() {
             return access.getValue();
@@ -294,32 +295,34 @@ class ClassProviderImpl implements ClassProvider {
     private static class Access {
         private static final int[] ACC = new int[23];
         private static final String[] NAME = new String[23];
+
         static {
             int idx = 0;
-            put(idx++, ACC_PUBLIC,      "public");
-            put(idx++, ACC_PRIVATE,     "private");
-            put(idx++, ACC_PROTECTED,   "protected");
-            put(idx++, ACC_STATIC,      "static");
-            put(idx++, ACC_FINAL,       "final");
-            put(idx++, ACC_SUPER,       "super");
-            put(idx++, ACC_SYNCHRONIZED,"synchronized");
-            put(idx++, ACC_OPEN,        "open");
-            put(idx++, ACC_TRANSITIVE,  "transitive");
-            put(idx++, ACC_VOLATILE,    "volatile");
-            put(idx++, ACC_BRIDGE,      "bridge");
-            put(idx++, ACC_STATIC_PHASE,"static_phase");
-            put(idx++, ACC_VARARGS,     "varargs");
-            put(idx++, ACC_TRANSIENT,   "transient");
-            put(idx++, ACC_NATIVE,      "native");
-            put(idx++, ACC_INTERFACE,   "interface");
-            put(idx++, ACC_ABSTRACT,    "abstract");
-            put(idx++, ACC_STRICT,      "strict");
-            put(idx++, ACC_SYNTHETIC,   "synthetic");
-            put(idx++, ACC_ANNOTATION , "annotation");
-            put(idx++, ACC_ENUM,        "enum");
-            put(idx++, ACC_MANDATED,    "mandated");
-            put(idx++, ACC_MODULE,      "module");
+            put(idx++, ACC_PUBLIC, "public");
+            put(idx++, ACC_PRIVATE, "private");
+            put(idx++, ACC_PROTECTED, "protected");
+            put(idx++, ACC_STATIC, "static");
+            put(idx++, ACC_FINAL, "final");
+            put(idx++, ACC_SUPER, "super");
+            put(idx++, ACC_SYNCHRONIZED, "synchronized");
+            put(idx++, ACC_OPEN, "open");
+            put(idx++, ACC_TRANSITIVE, "transitive");
+            put(idx++, ACC_VOLATILE, "volatile");
+            put(idx++, ACC_BRIDGE, "bridge");
+            put(idx++, ACC_STATIC_PHASE, "static_phase");
+            put(idx++, ACC_VARARGS, "varargs");
+            put(idx++, ACC_TRANSIENT, "transient");
+            put(idx++, ACC_NATIVE, "native");
+            put(idx++, ACC_INTERFACE, "interface");
+            put(idx++, ACC_ABSTRACT, "abstract");
+            put(idx++, ACC_STRICT, "strict");
+            put(idx++, ACC_SYNTHETIC, "synthetic");
+            put(idx++, ACC_ANNOTATION, "annotation");
+            put(idx++, ACC_ENUM, "enum");
+            put(idx++, ACC_MANDATED, "mandated");
+            put(idx++, ACC_MODULE, "module");
         }
+
         private static void put(int idx, int acc, String name) {
             ACC[idx] = acc;
             NAME[idx] = name;

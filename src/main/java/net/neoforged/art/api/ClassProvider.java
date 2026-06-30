@@ -81,6 +81,8 @@ public interface ClassProvider extends Closeable {
      * @return the optional class information
      */
     Optional<? extends IClassInfo> getClass(String cls);
+    
+    Optional<byte[]> getClassBytes(String cls);
 
     /**
      * A {@code ClassProvider.Builder} is used to configure and construct a {@link ClassProvider}.

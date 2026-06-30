@@ -29,6 +29,17 @@ class SortedClassProvider implements ClassProvider {
         return this.classCache.computeIfAbsent(cls, this::computeClassInfo);
     }
 
+    @Override
+    public Optional<byte[]> getClassBytes(String cls) {
+        for (ClassProvider provider : this.classProviders) {
+            Optional<byte[]> bytes = provider.getClassBytes(cls);
+            if (bytes.isPresent()) {
+                return bytes;
+            }
+        }
+        return Optional.empty();
+    }
+
     private Optional<? extends IClassInfo> computeClassInfo(String name) {
         for (ClassProvider classProvider : this.classProviders) {
             Optional<? extends IClassInfo> classInfo = classProvider.getClass(name);

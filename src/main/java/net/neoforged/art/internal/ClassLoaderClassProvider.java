@@ -9,6 +9,7 @@ import net.neoforged.art.api.ClassProvider;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 
 public class ClassLoaderClassProvider implements ClassProvider {
@@ -29,5 +30,19 @@ public class ClassLoaderClassProvider implements ClassProvider {
     }
 
     @Override
-    public void close() throws IOException {}
+    public Optional<byte[]> getClassBytes(String cls) {
+        String resource = cls + ".class";
+        try (InputStream is = this.classLoader.getResourceAsStream(resource)) {
+            if (is != null) {
+                return Optional.of(Util.toByteArray(is));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Could not get data to compute class info in file: " + resource, e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void close() throws IOException {
+    }
 }
