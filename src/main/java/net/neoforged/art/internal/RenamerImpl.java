@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -42,7 +43,7 @@ class RenamerImpl implements Renamer {
     private static final ProgressReporter PROGRESS = ProgressReporter.getDefault();
     static final int MAX_ASM_VERSION = Opcodes.ASM9;
     private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
-    private final List<File> libraries;
+    private final List<Path> libraries;
     private final List<Transformer> transformers;
     private final SortedClassProvider sortedClassProvider;
     private final List<ClassProvider> classProviders;
@@ -52,7 +53,7 @@ class RenamerImpl implements Renamer {
     private boolean setup = false;
     private ClassProvider libraryClasses;
 
-    RenamerImpl(List<File> libraries, List<Transformer> transformers, SortedClassProvider sortedClassProvider, List<ClassProvider> classProviders,
+    RenamerImpl(List<Path> libraries, List<Transformer> transformers, SortedClassProvider sortedClassProvider, List<ClassProvider> classProviders,
                 int threads, Consumer<String> logger, Consumer<String> debug) {
         this.libraries = libraries;
         this.transformers = transformers;
@@ -71,7 +72,7 @@ class RenamerImpl implements Renamer {
 
         ClassProvider.Builder libraryClassesBuilder = ClassProvider.builder().shouldCacheAll(true);
         this.logger.accept("Adding Libraries to Inheritance");
-        this.libraries.forEach(f -> libraryClassesBuilder.addLibrary(f.toPath()));
+        this.libraries.forEach(libraryClassesBuilder::addLibrary);
 
         this.libraryClasses = libraryClassesBuilder.build();
     }

@@ -5,31 +5,40 @@
 
 package net.neoforged.art.internal;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 import net.neoforged.art.api.ClassProvider;
 import net.neoforged.art.api.Renamer;
 import net.neoforged.art.api.Renamer.Builder;
 import net.neoforged.art.api.Transformer;
 import net.neoforged.srgutils.IMappingFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import static java.util.Objects.requireNonNull;
 
 public class RenamerBuilder implements Builder {
-    private final List<File> libraries = new ArrayList<>();
+    private final List<Path> libraries = new ArrayList<>();
     private final List<ClassProvider> classProviders = new ArrayList<>();
     private final List<Transformer.Factory> transformerFactories = new ArrayList<>();
     private int threads = Runtime.getRuntime().availableProcessors();
     private boolean withJvmClasspath = false;
     private Consumer<String> logger = System.out::println;
-    private Consumer<String> debug = s -> {};
+    private Consumer<String> debug = s -> {
+    };
     private boolean collectAbstractParams = true;
 
     @Override
     public Builder lib(File value) {
+        this.libraries.add(value.toPath());
+        return this;
+    }
+
+    @Override
+    public Builder lib(Path value) {
         this.libraries.add(value);
         return this;
     }

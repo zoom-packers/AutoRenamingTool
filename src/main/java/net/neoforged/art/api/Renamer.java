@@ -5,14 +5,15 @@
 
 package net.neoforged.art.api;
 
+import net.neoforged.art.internal.RenamerBuilder;
+
 import java.io.Closeable;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
-
-import net.neoforged.art.internal.RenamerBuilder;
 
 /**
  * A {@code Renamer} is used to run generic transformers on a JAR file.
@@ -23,7 +24,7 @@ public interface Renamer extends Closeable {
      * and then outputs it to the output JAR file.
      * This method is guaranteed to be repeatable with multiple inputs and outputs.
      *
-     * @param input the input JAR file to process
+     * @param input  the input JAR file to process
      * @param output the output JAR file location
      */
     void run(File input, File output);
@@ -68,6 +69,14 @@ public interface Renamer extends Closeable {
          * @return this builder
          */
         Builder lib(File value);
+
+        /**
+         * Adds a library path to the classpath to use for inheritance.
+         *
+         * @param value the library path
+         * @return this builder
+         */
+        Builder lib(Path value);
 
         /**
          * Adds a mapping transformer using the provided mapping file.
@@ -136,6 +145,7 @@ public interface Renamer extends Closeable {
 
         /**
          * Sets whether to collect parameter names of abstract methods for FernFlower. Defaults to {@code true}.
+         *
          * @param collectAbstractParams whether to collect parameter names of abstract methods for FernFlower
          * @return this builder
          */
