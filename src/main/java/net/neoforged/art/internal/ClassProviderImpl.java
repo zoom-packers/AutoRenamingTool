@@ -118,7 +118,9 @@ class ClassProviderImpl implements ClassProvider {
 
             if (!node.fields.isEmpty())
                 this.fields = Collections.unmodifiableMap(node.fields.stream().map(FieldInfo::new)
-                    .collect(Collectors.toMap(FieldInfo::getName, Function.identity())));
+                    // Obfuscated classes can declare several fields with the same name and different descriptors;
+                    // lookups are by name only, so keep the first one instead of failing
+                    .collect(Collectors.toMap(FieldInfo::getName, Function.identity(), (first, second) -> first, LinkedHashMap::new)));
             else
                 this.fields = null;
         }
@@ -139,7 +141,9 @@ class ClassProviderImpl implements ClassProvider {
             Field[] flds = node.getDeclaredFields();
             if (flds.length > 0) {
                 this.fields = Collections.unmodifiableMap(Arrays.asList(flds).stream().map(FieldInfo::new)
-                    .collect(Collectors.toMap(FieldInfo::getName, Function.identity())));
+                    // Obfuscated classes can declare several fields with the same name and different descriptors;
+                    // lookups are by name only, so keep the first one instead of failing
+                    .collect(Collectors.toMap(FieldInfo::getName, Function.identity(), (first, second) -> first, LinkedHashMap::new)));
             } else
                 this.fields = null;
         }
